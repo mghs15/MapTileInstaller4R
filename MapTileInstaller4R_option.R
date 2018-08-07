@@ -3,7 +3,7 @@ library(RCurl)
 original.wd <- getwd()
 setwd(original.wd)
 
-#ì‹Æ—pƒtƒHƒ‹ƒ_–¼
+#ä½œæ¥­ç”¨ãƒ•ã‚©ãƒ«ãƒ€å
 folder <- "demarea"
 
 Tile.LIST <- c("8/215/108",
@@ -109,10 +109,11 @@ Tile.LIST <- c("8/215/108",
 "8/233/92",
 "8/237/110")
 
-#ƒ^ƒCƒ‹Ží—Þ‚Ì‹Lq
+#ã‚¿ã‚¤ãƒ«ç¨®é¡žã®è¨˜è¿°
 tile.name <- "https://cyberjapandata.gsi.go.jp/xyz/std" 
 
-#ƒ^ƒCƒ‹ƒŠƒXƒg‚Ì¬Œ`iƒ^ƒCƒ‹‚ÌXYZÀ•W‚ðs—ñ‚ÌŒ`‚É®—j
+#ã‚¿ã‚¤ãƒ«ãƒªã‚¹ãƒˆã®æˆå½¢ï¼ˆã‚¿ã‚¤ãƒ«ã®XYZåº§æ¨™ã‚’è¡Œåˆ—ã®å½¢ã«æ•´ç†ï¼‰
+#ãŸã¨ãˆã°ã€("8/237/110")ã€€â†’ã€€("8", "237", "110")
 tile.list <- strsplit(Tile.LIST , "/")
 
 list.z <- NULL
@@ -130,17 +131,17 @@ tileset <- cbind(tileset, list.z)
 tileset <- cbind(tileset, list.x)
 tileset <- cbind(tileset, list.y)
 
-#ƒ^ƒCƒ‹”Ô†‚Ì’Šo
+#ã‚¿ã‚¤ãƒ«ç•ªå·ã®æŠ½å‡º
 zl.V <- tileset[,1]
 tx.V <- tileset[,2]
 ty.V <- tileset[,3]
 
-#ƒfƒBƒŒƒNƒgƒŠ‚ÌÝ’è
+#ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã®è¨­å®š
 wd <- original.wd
-z.wd <- paste(wd, "/", folder, sep="") #@ì‹Æ—pƒfƒBƒŒƒNƒgƒŠ‚ÉˆÚ“® 
+z.wd <- paste(wd, "/", folder, sep="") #ã€€ä½œæ¥­ç”¨ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã«ç§»å‹• 
 dir.create(z.wd)
-setwd(z.wd) # ƒfƒBƒŒƒNƒgƒŠ‚ðZ‚É‡‚í‚¹‚Ä•ÏX
-dir.create(as.character(rownames(table(zl)))) # Z‚ÌƒtƒHƒ‹ƒ_‚ðì¬irownames(table(zl))‚Í“ªˆ«‚¢‚Ì‚Å‰½‚Æ‚©‚µ‚½‚¢j
+setwd(z.wd) # ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã‚’Zã«åˆã‚ã›ã¦å¤‰æ›´
+dir.create(as.character(rownames(table(zl)))) # Zã®ãƒ•ã‚©ãƒ«ãƒ€ã‚’ä½œæˆï¼ˆrownames(table(zl))ã¯é ­æ‚ªã„ã®ã§ä½•ã¨ã‹ã—ãŸã„ï¼‰
 
 i <- 1
 while(i <= length(tile.list)){
@@ -148,10 +149,10 @@ zl <- zl.V[i]
 tx <- tx.V[i]
 ty <- ty.V[i]
 x.wd <- paste(z.wd, "/", zl, sep="")
-setwd(x.wd) #@ì‹Æ—pƒfƒBƒŒƒNƒgƒŠ‚ÉˆÚ“®
+setwd(x.wd) #ã€€ä½œæ¥­ç”¨ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã«ç§»å‹•
 tryCatch(
 	{
-	dir.create(as.character(tx))  # X‚ÌƒtƒHƒ‹ƒ_‚ðì¬
+	dir.create(as.character(tx))  # Xã®ãƒ•ã‚©ãƒ«ãƒ€ã‚’ä½œæˆ
 	}, error = function(e){}
 	)
 y.file <- paste(x.wd, "/", tx, "/", ty, ".png", sep="")
