@@ -17,13 +17,20 @@ setwd(wd)
 #  ----------------
 #
 #読み込みたい範囲とタイルURLの入力
+#屋久島の場合
 x1 <- 132.182380
 x2 <- 131.185
 y1 <- 35.081611
 y2 <- 35.335817
+#日本全体の場合
+x1 <- 154.907227
+x2 <- 122.080078
+y1 <- 46.528635
+y2 <- 19.683970
+#ズームレベル指定
 z1 <- 14
 z2 <- 15
-folder <- "test6"
+folder <- "test6" #フォルダ名
 tile.name <- "https://cyberjapandata.gsi.go.jp/xyz/std" # とりあえず、地理院タイルを読み込みます。
 # 地理院タイルの利用規約はこちら　http://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html
 # 入力終わり
@@ -35,7 +42,7 @@ X1 <- min(x1, x2)
 X2 <- max(x1, x2)
 Y1 <- max(y1, y2) #x,zと逆であるので注意
 Y2 <- min(y1, y2) #x,zと逆であるので注意
-dir.create(folder) 
+dir.create(folder) #格納フォルダを作成
 k <- Z1
 while(k <= Z2){
 zl <- k
