@@ -11,4 +11,4 @@ If you have a list of tile path (like z/x/y or z, x, y ...), you can use "MapTil
 
 あと、遅いです。
 
-mokurokuもどき（https://github.com/gsi-cyberjapan/mokuroku-spec）も作れるようになりました。機能するかは知らない。
+mokurokuもどき（　https://github.com/gsi-cyberjapan/mokuroku-spec　）も作れるようになりました。機能するかは知らない。
