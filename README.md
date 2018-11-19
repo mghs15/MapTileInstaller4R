@@ -15,8 +15,8 @@ mokurokuもどき（　https://github.com/gsi-cyberjapan/mokuroku-spec　
 ）も作れるようになりました→mokuroku.R。機能するかは知らない。
 
 gzに圧縮するのは、コマンドラインで行う
-
+```
 gzip mokuroku.csv
 gzip -d mokuroku.csv.gz
-
+```
 
