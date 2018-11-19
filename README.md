@@ -13,3 +13,10 @@ If you have a list of tile path (like z/x/y or z, x, y ...), you can use "MapTil
 
 mokurokuもどき（　https://github.com/gsi-cyberjapan/mokuroku-spec　
 ）も作れるようになりました→mokuroku.R。機能するかは知らない。
+
+gzに圧縮するのは、コマンドラインで行う
+
+gzip mokuroku.csv
+gzip -d mokuroku.csv.gz
+
+
