@@ -138,12 +138,79 @@ C <- subset(info, info[,"z"]=="14")
 vx <- as.numeric(as.character(C[,"x"])) 
 stry <- as.character(C[,"y.ext"]) #文字列分割
 vy <- as.numeric(unlist(strsplit(stry, ".pbf")))
-vy <- rev(vy) # タイル座標なので逆転させる
-val <- C[, "size"]
+value <- C[, "size"]
 
-plot(vx, vy, pch=16, col = gray(val/max(val)))
+plot(vx, vy, pch=16, col = gray(value/max(value)))
 
+### IDW・クリギング手順まとめ ####
+library(spdep); library(maptools); library(gstat); library(sp)
+library(raster); library(rgdal); library(automap)
+df <- cbind(vx, vy, value); colnames(df) <- c("x", "y", "value") # 上のデータをまとめる
+plot(df); head(df)
 
+# 元データをspに変換(このテキストの上の方参照)
+dat <- as.data.frame(df) # サンプリング点データ(x, y, value)
+coordinates(dat) = ~x+y
+spplot(dat)
+#dev.new()
+#writeOGR(dat, "dat.geojson", layer = "value", driver = "GeoJSON")
+
+# または、GeoJSONを読み込む 
+# dat <- readOGR("dat.geojson")
+
+# 投影法の変換（ＵＴＭへ）
+# dat@proj4string <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+# zone <- 54; new.crs <- CRS(paste("+proj=utm +zone=", zone, " +datum=WGS84 +units=m", sep=""))
+# dat <- spTransform(dat, CRS=new.crs) 
+# spplot(dat)
+
+# グリッド（newdata）
+coord <- coordinates(dat)
+x.grid <- seq(min(coord[,1]), max(coord[,1]), length=100)
+y.grid <- seq(min(coord[,2]), max(coord[,2]), length=100)
+xy.grid <- expand.grid(x.grid, y.grid)
+vx <- seq(min(coord[,1]), max(coord[,1]), length=nrow(xy.grid))
+vy <- seq(min(coord[,2]), max(coord[,2]), length=nrow(xy.grid))
+grid <- as.data.frame(cbind(xy.grid, vx, vy))
+colnames(grid) <- c("x","y", colnames(grid)[-c(1:2)])
+gridded(grid) = ~x+y
+
+########################
+# 普通クリギング　Ordinary kriging
+kriging_o <- autoKrige(value~1, dat, grid, model = c("Sph", "Exp", "Gau", "Lin")) # , model = c("Sph", "Exp", "Gau", "Lin")
+dev.new(); plot(kriging_o)
+parameters_o <- kriging_o$var_model
+krig_o <- kriging_o[[1]]
+r_o <- raster(krig_o["var1.pred"])
+r_o_sd <- raster(krig_o["var1.stdev"])
+
+plot(r_o);contour(r_o, col="white", add=T)
+plot(r_o_sd);contour(r_o_sd, col="white", add=T)
+
+# 普遍クリギング Universal kriging
+kriging_u <- autoKrige(value~x+y, dat, grid, model = c("Sph", "Exp", "Gau", "Lin")) # , model = c("Sph", "Exp", "Gau", "Lin")
+dev.new(); plot(kriging_u)
+parameters_u <- kriging_u$var_model
+krig_u <- kriging_u[[1]]
+r_u <- raster(krig_u["var1.pred"])
+r_u_sd <- raster(krig_u["var1.stdev"])
+
+plot(r_u);contour(r_u, col="white", add=T)
+plot(r_u_sd);contour(r_u_sd, col="white", add=T)
+
+########################
+### クリギング結果の出力###
+# 投影変換
+r_o_ll <- projectRaster(r_o, crs="+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+plot(r_o_ll, main=strsplit(projection(r_o_ll)," ")[[1]][c(1:2)])
+r_u_ll <- projectRaster(r_u, crs="+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+plot(r_u_ll, main=strsplit(projection(r_u_ll)," ")[[1]][c(1:2)])
+# 出力
+writeRaster(r_o_ll, "krig_pred_190202_o_1.tiff", overwrite=TRUE, format="GTiff") # GeoTiff（拡張子.tif）で予測値を出力。
+writeRaster(r_u_ll, "krig_pred_190202_u_1.tiff", overwrite=TRUE, format="GTiff") # GeoTiff（拡張子.tif）で予測値を出力。
+
+#########################################################
+#########################################################################
 #########################################################################
 #目標ディレクトリの設定2
 setwd <- wd
@@ -203,27 +270,6 @@ while(i <= length(unique)){
 par(mfcol = c(1,1), oma = c(0, 0, 0, 0))
 
 #########################################################################
-
-#ディレクトリごとのヒストグラム
-input <- info
-max <- (floor(max(input[,"size"])/100)+1)*100
-i <- 1
-col <- c("black", "black", "black", "black", "black", "blue", "pink", "orange", "red", "green", "yellow", "grey", "purple", "brown")
-dir <- "z" #調べたいディレクトリの列名
-unique <- c("1", "2" , "3" , "4",  "5",  "6",  "7",  "8",  "9" , "10", "11", "12", "13" ,"14")#調べたいディレクトリの要素名（ZLなど）
-# unique <- as.character(unique(infof[,dir]))
-par(mfcol = c(3,5), oma = c(0, 0, 0, 0)) # mfcol で指定した場合は列順に，mfrow で指定した場合は行順にグラフが描かれる
-hist(sizef, breaks = seq(0, max, 10), xlab="size (kb)", main="Total", freq = FALSE, type="n")
-while(i <= length(unique)){
-	bool <- (input[,dir] == unique[i])
-	C <- subset(input, bool)[,"size"]
-	hist(C, breaks = seq(0, max, 10), col=col[i], main=unique[i], xlab="size [byte]", freq = FALSE) # add=T
-	print(paste("ZL=", unique[i], ", mean=", mean(C), ", sd=", sd(C), ", n=", length(C), sep=""))
-	input <- subset(input, !bool)
-	i <- i + 1
-}
-par(mfcol = c(1,1), oma = c(0, 0, 0, 0))
-
 
 
 
