@@ -138,7 +138,6 @@ C <- subset(info, info[,"z"]=="14")
 vx <- as.numeric(as.character(C[,"x"])) 
 stry <- as.character(C[,"y.ext"]) #•¶Žš—ñ•ªŠ„
 vy <- as.numeric(unlist(strsplit(stry, ".pbf")))
-vy <- rev(vy) # ƒ^ƒCƒ‹À•W‚È‚Ì‚Å‹t“]‚³‚¹‚é
 value <- C[, "size"]
 
 plot(vx, vy, pch=16, col = gray(value/max(value)))
