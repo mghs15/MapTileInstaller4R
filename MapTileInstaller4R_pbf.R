@@ -148,7 +148,11 @@ library(spdep); library(maptools); library(gstat); library(sp)
 library(raster); library(rgdal); library(automap)
 df <- cbind(vx, vy, value); colnames(df) <- c("x", "y", "value") # 上のデータをまとめる
 plot(df); head(df)
+length(unique(df[,"x"])); length(unique(df[,"y"]))
 
+
+########################
+# Transform
 # 元データをspに変換(このテキストの上の方参照)
 dat <- as.data.frame(df) # サンプリング点データ(x, y, value)
 coordinates(dat) = ~x+y
@@ -164,6 +168,13 @@ spplot(dat)
 # zone <- 54; new.crs <- CRS(paste("+proj=utm +zone=", zone, " +datum=WGS84 +units=m", sep=""))
 # dat <- spTransform(dat, CRS=new.crs) 
 # spplot(dat)
+
+# Tile Raster
+datg <- dat
+gridded(datg) = TRUE
+tile.raster <- raster(datg)
+plot(tile.raster)
+writeRaster(tile.raster, "Tile_Raster.tiff", overwrite=TRUE, format="GTiff") # GeoTiff（拡張子.tif）でタイルをラスタとして出力。
 
 ########################
 # Moran
@@ -182,8 +193,8 @@ moran.test(df[,"value"], nb)
 # Kriging
 # グリッド grid (newdata)
 coord <- coordinates(dat)
-x.grid <- seq(min(coord[,1]), max(coord[,1]), length=100)
-y.grid <- seq(min(coord[,2]), max(coord[,2]), length=100)
+x.grid <- seq(min(coord[,1]), max(coord[,1]), length=24)
+y.grid <- seq(min(coord[,2]), max(coord[,2]), length=37)
 xy.grid <- expand.grid(x.grid, y.grid)
 vx <- seq(min(coord[,1]), max(coord[,1]), length=nrow(xy.grid))
 vy <- seq(min(coord[,2]), max(coord[,2]), length=nrow(xy.grid))
