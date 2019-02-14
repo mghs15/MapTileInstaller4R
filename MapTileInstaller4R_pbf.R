@@ -142,7 +142,12 @@ value <- C[, "size"]
 
 plot(vx, vy, pch=16, col = gray(value/max(value)))
 
-### IDW・クリギング手順まとめ ####
+
+
+
+############################################
+### Spatial Analysis ####
+############################################
 library(spdep); library(maptools); library(gstat); library(sp)
 library(raster); library(rgdal); library(automap)
 df <- cbind(vx, vy, value); colnames(df) <- c("x", "y", "value") # 上のデータをまとめる
@@ -164,6 +169,22 @@ spplot(dat)
 # dat <- spTransform(dat, CRS=new.crs) 
 # spplot(dat)
 
+########################
+# Moran
+library()
+
+coords.df <- cbind(df[,"x"], df[,"y"])
+nb <- nb2listw(knn2nb(knearneigh(coords.df, k=2)))
+plot(nb, coords.df)
+moran.test(df[,"value"], nb)
+
+coords.df <- cbind(df[,"x"], df[,"y"])
+nb <- nb2listw(dnearneigh(coords.df, 0, 1))
+plot(nb, coords.df)
+moran.test(df[,"value"], nb)
+
+########################
+# Kriging
 # グリッド（newdata）
 coord <- coordinates(dat)
 x.grid <- seq(min(coord[,1]), max(coord[,1]), length=100)
@@ -175,7 +196,7 @@ grid <- as.data.frame(cbind(xy.grid, vx, vy))
 colnames(grid) <- c("x","y", colnames(grid)[-c(1:2)])
 gridded(grid) = ~x+y
 
-########################
+
 # 普通クリギング　Ordinary kriging
 kriging_o <- autoKrige(value~1, dat, grid, model = c("Sph", "Exp", "Gau", "Lin")) # , model = c("Sph", "Exp", "Gau", "Lin")
 dev.new(); plot(kriging_o)
