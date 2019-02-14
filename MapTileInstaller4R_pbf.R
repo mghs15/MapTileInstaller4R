@@ -131,6 +131,9 @@ while(i <= length(unique)){
 	i <- i + 1
 }
 par(mfcol = c(1,1), oma = c(0, 0, 0, 0))
+
+############################################
+### Spatial Analysis ####
 ############################################
 # info <- info[-c(length(info[,1])-1, length(info[,1])),]
 
@@ -141,13 +144,6 @@ vy <- as.numeric(unlist(strsplit(stry, ".pbf")))
 value <- C[, "size"]
 
 plot(vx, vy, pch=16, col = gray(value/max(value)))
-
-
-
-
-############################################
-### Spatial Analysis ####
-############################################
 library(spdep); library(maptools); library(gstat); library(sp)
 library(raster); library(rgdal); library(automap)
 df <- cbind(vx, vy, value); colnames(df) <- c("x", "y", "value") # 上のデータをまとめる
@@ -171,7 +167,6 @@ spplot(dat)
 
 ########################
 # Moran
-library()
 
 coords.df <- cbind(df[,"x"], df[,"y"])
 nb <- nb2listw(knn2nb(knearneigh(coords.df, k=2)))
@@ -185,7 +180,7 @@ moran.test(df[,"value"], nb)
 
 ########################
 # Kriging
-# グリッド（newdata）
+# グリッド grid (newdata)
 coord <- coordinates(dat)
 x.grid <- seq(min(coord[,1]), max(coord[,1]), length=100)
 y.grid <- seq(min(coord[,2]), max(coord[,2]), length=100)
@@ -219,8 +214,7 @@ r_u_sd <- raster(krig_u["var1.stdev"])
 plot(r_u);contour(r_u, col="white", add=T)
 plot(r_u_sd);contour(r_u_sd, col="white", add=T)
 
-########################
-### クリギング結果の出力###
+# クリギング結果の出力 Output result
 # 投影変換
 r_o_ll <- projectRaster(r_o, crs="+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
 plot(r_o_ll, main=strsplit(projection(r_o_ll)," ")[[1]][c(1:2)])
@@ -230,7 +224,7 @@ plot(r_u_ll, main=strsplit(projection(r_u_ll)," ")[[1]][c(1:2)])
 writeRaster(r_o_ll, "krig_pred_190202_o_1.tiff", overwrite=TRUE, format="GTiff") # GeoTiff（拡張子.tif）で予測値を出力。
 writeRaster(r_u_ll, "krig_pred_190202_u_1.tiff", overwrite=TRUE, format="GTiff") # GeoTiff（拡張子.tif）で予測値を出力。
 
-#########################################################
+##################################################################################################################################
 #########################################################################
 #########################################################################
 #目標ディレクトリの設定2
