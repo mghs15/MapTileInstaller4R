@@ -135,21 +135,24 @@ par(mfcol = c(1,1), oma = c(0, 0, 0, 0))
 ############################################
 ### Spatial Analysis ####
 ############################################
+library(spdep); library(maptools); library(gstat); library(sp)
+library(raster); library(rgdal); library(automap)
+
+# use "info" variable
 # info <- info[-c(length(info[,1])-1, length(info[,1])),]
 
-C <- subset(info, info[,"z"]=="14")
+zl <- "14"
+C <- subset(info, info[,"z"]==zl)
 vx <- as.numeric(as.character(C[,"x"])) 
 stry <- as.character(C[,"y.ext"]) #文字列分割
 vy <- as.numeric(unlist(strsplit(stry, ".pbf")))
 value <- C[, "size"]
 
 plot(vx, vy, pch=16, col = gray(value/max(value)))
-library(spdep); library(maptools); library(gstat); library(sp)
-library(raster); library(rgdal); library(automap)
+
 df <- cbind(vx, vy, value); colnames(df) <- c("x", "y", "value") # 上のデータをまとめる
 plot(df); head(df)
 length(unique(df[,"x"])); length(unique(df[,"y"]))
-
 
 ########################
 # Transform
@@ -163,18 +166,46 @@ spplot(dat)
 # または、GeoJSONを読み込む 
 # dat <- readOGR("dat.geojson")
 
-# 投影法の変換（ＵＴＭへ）
-# dat@proj4string <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
-# zone <- 54; new.crs <- CRS(paste("+proj=utm +zone=", zone, " +datum=WGS84 +units=m", sep=""))
-# dat <- spTransform(dat, CRS=new.crs) 
-# spplot(dat)
-
-# Tile Raster
+# Raster of Tiles 
 datg <- dat
 gridded(datg) = TRUE
 tile.raster <- raster(datg)
 plot(tile.raster)
+# writeRaster(tile.raster, "Tile_Raster.tiff", overwrite=TRUE, format="GTiff") # GeoTiff（拡張子.tif）でタイルをラスタとして出力。
+
+########################
+# Tile Grid Raster (use "zl", and "vx", "vy" and "value" used to create "df")
+# Convert Tile x y to lon lat
+vz <- as.numeric(zl)  #zoom level
+lon_1 <- vx*360/(2^vz) - 180
+lat_1 <- atan(sinh(pi - vy*2*pi/(2^vz)))*180/pi
+lon_2 <- (vx+1)*360/(2^vz) - 180
+lat_2 <- atan(sinh(pi - (vy+1)*2*pi/(2^vz)))*180/pi
+lon <- (lon_1 + lon_2)/2; lat <- (lat_1 + lat_2)/2
+plot(lon, lat, pch=16, col = gray(value/max(value)))
+
+dfg <- cbind(lon, lat, value) 
+colnames(dfg) <- c("x", "y", "value")
+plot(dfg); head(dfg)
+length(unique(dfg[,"x"])); length(unique(dfg[,"y"]))
+
+# to Spatial Data
+datLL <- as.data.frame(dfg) 
+coordinates(datLL) = ~x+y
+datLL@proj4string <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+# writeOGR(datLL, "datLL.geojson", layer = "value", driver = "GeoJSON")
+
+# 投影法の変換（to UTM）
+# zone <- 30; new.crs <- CRS(paste("+proj=utm +zone=", zone, " +datum=WGS84 +units=m", sep=""))
+# datLL <- spTransform(datLL, CRS=new.crs) 
+# spplot(datLL)
+
+gridded(datLL) = TRUE
+tile.raster <- raster(datLL)
+plot(tile.raster)
 writeRaster(tile.raster, "Tile_Raster.tiff", overwrite=TRUE, format="GTiff") # GeoTiff（拡張子.tif）でタイルをラスタとして出力。
+
+datg # 
 
 ########################
 # Moran
@@ -191,20 +222,22 @@ moran.test(df[,"value"], nb)
 
 ########################
 # Kriging
+dat.k <- datLL
+
 # グリッド grid (newdata)
-coord <- coordinates(dat)
-x.grid <- seq(min(coord[,1]), max(coord[,1]), length=24)
-y.grid <- seq(min(coord[,2]), max(coord[,2]), length=37)
+coord <- coordinates(dat.k)
+x.grid <- seq(min(coord[,1]), max(coord[,1]), length=100)
+y.grid <- seq(min(coord[,2]), max(coord[,2]), length=100)
 xy.grid <- expand.grid(x.grid, y.grid)
-vx <- seq(min(coord[,1]), max(coord[,1]), length=nrow(xy.grid))
-vy <- seq(min(coord[,2]), max(coord[,2]), length=nrow(xy.grid))
-grid <- as.data.frame(cbind(xy.grid, vx, vy))
+vxg <- seq(min(coord[,1]), max(coord[,1]), length=nrow(xy.grid))
+vyg <- seq(min(coord[,2]), max(coord[,2]), length=nrow(xy.grid))
+grid <- as.data.frame(cbind(xy.grid, vxg, vyg))
 colnames(grid) <- c("x","y", colnames(grid)[-c(1:2)])
 gridded(grid) = ~x+y
-
+# grid@proj4string <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
 
 # 普通クリギング　Ordinary kriging
-kriging_o <- autoKrige(value~1, dat, grid, model = c("Sph", "Exp", "Gau", "Lin")) # , model = c("Sph", "Exp", "Gau", "Lin")
+kriging_o <- autoKrige(value~1, dat.k, grid, model = c("Sph", "Exp", "Gau", "Lin")) # , model = c("Sph", "Exp", "Gau", "Lin")
 dev.new(); plot(kriging_o)
 parameters_o <- kriging_o$var_model
 krig_o <- kriging_o[[1]]
@@ -215,7 +248,7 @@ plot(r_o);contour(r_o, col="white", add=T)
 plot(r_o_sd);contour(r_o_sd, col="white", add=T)
 
 # 普遍クリギング Universal kriging
-kriging_u <- autoKrige(value~x+y, dat, grid, model = c("Sph", "Exp", "Gau", "Lin")) # , model = c("Sph", "Exp", "Gau", "Lin")
+kriging_u <- autoKrige(value~x+y, dat.k, grid, model = c("Sph", "Exp", "Gau", "Lin")) # , model = c("Sph", "Exp", "Gau", "Lin")
 dev.new(); plot(kriging_u)
 parameters_u <- kriging_u$var_model
 krig_u <- kriging_u[[1]]
@@ -234,6 +267,15 @@ plot(r_u_ll, main=strsplit(projection(r_u_ll)," ")[[1]][c(1:2)])
 # 出力
 writeRaster(r_o_ll, "krig_pred_190202_o_1.tiff", overwrite=TRUE, format="GTiff") # GeoTiff（拡張子.tif）で予測値を出力。
 writeRaster(r_u_ll, "krig_pred_190202_u_1.tiff", overwrite=TRUE, format="GTiff") # GeoTiff（拡張子.tif）で予測値を出力。
+
+# On Leaflet
+library("leaflet"); library("tidyr")
+pal.k <- colorNumeric(c("white",  "orange"), values(r_u_ll),  na.color = "transparent")
+map <- leaflet(datLL) %>% addTiles() %>% setView(lng=0,lat=51,zoom=7) %>%
+	addScaleBar(position="bottomleft", options=scaleBarOptions(imperial = FALSE)) %>%
+	addRasterImage(r_u_ll, colors = pal.k, opacity = 0.8) %>% 
+	addLegend(pal = pal.k, values = values(r_u_ll), title = "value <br> [kb]")
+map
 
 ##################################################################################################################################
 #########################################################################
