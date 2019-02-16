@@ -89,6 +89,8 @@ E <- c(E, chi$p.value)
 i <- i+1
 }
 
+apply(D, 2, mean)/n
+
 col <- ifelse(E <= 0.05, "red", "black")
 plot(E, col=col)
 abline(h=0.05, col="blue")

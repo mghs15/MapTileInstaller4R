@@ -196,9 +196,9 @@ datLL@proj4string <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
 # writeOGR(datLL, "datLL.geojson", layer = "value", driver = "GeoJSON")
 
 # 投影法の変換（to UTM）
-# zone <- 30; new.crs <- CRS(paste("+proj=utm +zone=", zone, " +datum=WGS84 +units=m", sep=""))
-# datLL <- spTransform(datLL, CRS=new.crs) 
-# spplot(datLL)
+zone <- 30; new.crs <- CRS(paste("+proj=utm +zone=", zone, " +datum=WGS84 +units=m", sep=""))
+datLL <- spTransform(datLL, CRS=new.crs) 
+spplot(datLL)
 
 gridded(datLL) = TRUE
 tile.raster <- raster(datLL)
@@ -258,6 +258,7 @@ r_u_sd <- raster(krig_u["var1.stdev"])
 plot(r_u);contour(r_u, col="white", add=T)
 plot(r_u_sd);contour(r_u_sd, col="white", add=T)
 
+
 # クリギング結果の出力 Output result
 # 投影変換
 r_o_ll <- projectRaster(r_o, crs="+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
@@ -268,14 +269,46 @@ plot(r_u_ll, main=strsplit(projection(r_u_ll)," ")[[1]][c(1:2)])
 writeRaster(r_o_ll, "krig_pred_190202_o_1.tiff", overwrite=TRUE, format="GTiff") # GeoTiff（拡張子.tif）で予測値を出力。
 writeRaster(r_u_ll, "krig_pred_190202_u_1.tiff", overwrite=TRUE, format="GTiff") # GeoTiff（拡張子.tif）で予測値を出力。
 
+
 # On Leaflet
+dat.k.out <- spTransform(dat.k, CRS=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"))
+TilePos <- coordinates(dat.k.out)
+tile_zoomlevel <- 1 + 10/vz
+
+pal.o <- colorNumeric(c("white",  "orange"), values(r_o_ll),  na.color = "transparent")
+pal.u <- colorNumeric(c("white",  "green"), values(r_u_ll),  na.color = "transparent")
+atr_gsi <- "<a href='http://maps.gsi.go.jp/development/ichiran.html' target='_blank'>GSI-Tiles</a>"
+map <- leaflet(options = leafletOptions(zoomControl = FALSE)) %>% setView(lng=0,lat=51,zoom=7) %>%
+	# add tiles
+	addTiles("http://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", attribution = atr_gsi, group = "GSI Tiles") %>%
+	addTiles(group = "OpenStreetMap") %>%
+	# add original data
+	addCircleMarkers(TilePos[,"x"], TilePos[,"y"], group = "TilePos", color= "blue", stroke=FALSE, radius = tile_zoomlevel) %>% 
+	# add kriging results (raster)
+	addRasterImage(r_o_ll, colors = pal.o, opacity = 0.8, group = "OrdKri") %>% 
+	addLegend(pal = pal.o, values = values(r_o_ll), title = "size <br> [kb] <br> Ord", group = "OrdKri", position="topleft") %>%
+	addRasterImage(r_u_ll, colors = pal.u, opacity = 0.8, group = "UniKri") %>% 
+	addLegend(pal = pal.u, values = values(r_u_ll), title = "size <br> [kb] <br> Uni", group = "UniKri", position="topleft") %>%
+	# set tiles and raster on maps
+	addLayersControl(
+	  baseGroups = c("OpenStreetMap", "GSI Tiles"),
+	  overlayGroups = c("TilePos", "OrdKri", "UniKri"),
+	  position="topright",
+	  options=layersControlOptions(collapsed = TRUE)
+	) %>%
+	# add scale bar
+	addScaleBar(position="bottomleft", options=scaleBarOptions(imperial = FALSE))
+map
+
+
+# Simple
 library("leaflet"); library("tidyr")
 pal.k <- colorNumeric(c("white",  "orange"), values(r_u_ll),  na.color = "transparent")
-map <- leaflet(datLL) %>% addTiles() %>% setView(lng=0,lat=51,zoom=7) %>%
+map_s <- leaflet(dat.k) %>% addTiles() %>% setView(lng=0,lat=51,zoom=7) %>%
 	addScaleBar(position="bottomleft", options=scaleBarOptions(imperial = FALSE)) %>%
 	addRasterImage(r_u_ll, colors = pal.k, opacity = 0.8) %>% 
 	addLegend(pal = pal.k, values = values(r_u_ll), title = "value <br> [kb]")
-map
+map_s
 
 ##################################################################################################################################
 #########################################################################
