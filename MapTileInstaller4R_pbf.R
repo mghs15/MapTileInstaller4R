@@ -148,7 +148,8 @@ C <- subset(info, info[,"z"]==zl)
 vx <- as.numeric(as.character(C[,"x"])) 
 stry <- as.character(C[,"y.ext"]) #•¶Žš—ñ•ªŠ„
 vy <- as.numeric(unlist(strsplit(stry, ".pbf")))
-value <- C[, "size"]
+value <- log(C[, "size"]+1) # idea from "https://github.com/hfu/advent-vt/wiki/%E9%87%8F%E3%83%AC%E3%83%99%E3%83%AB-q-%E3%81%A8%E3%81%84%E3%81%86%E8%80%83%E3%81%88%E6%96%B9"
+
 
 plot(vx, vy, pch=16, col = gray(value/max(value)))
 
@@ -286,8 +287,8 @@ dat.k.out@proj4string <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
 TilePos <- coordinates(dat.k.out)
 tile_zoomlevel <- 1 + 10/vz
 
-pal.o <- colorNumeric(c("white",  "orange"), values(r_o_ll),  na.color = "transparent")
-pal.u <- colorNumeric(c("white",  "green"), values(r_u_ll),  na.color = "transparent")
+pal.o <- colorNumeric(c("blue","skyblue", "white", "yellow", "orange"), values(r_o_ll),  na.color = "transparent")
+pal.u <- colorNumeric(c("violet", "white",  "green"), values(r_u_ll),  na.color = "transparent")
 atr_gsi <- "<a href='http://maps.gsi.go.jp/development/ichiran.html' target='_blank'>GSI-Tiles</a>"
 map <- leaflet(options = leafletOptions(zoomControl = FALSE)) %>% setView(lng=0,lat=51,zoom=7) %>%
 	# add tiles
