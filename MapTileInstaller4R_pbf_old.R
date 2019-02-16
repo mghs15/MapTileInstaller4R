@@ -4,8 +4,8 @@ library("curl")
 original.wd <- getwd()
 setwd(original.wd)
 
-# ì‹ÆƒfƒBƒŒƒNƒgƒŠ‚ÌÝ’è
-wd <- "C:/Users/*****/Desktop/Tile" # ‚¨D‚«‚ÈƒpƒX‚ð
+# ä½œæ¥­ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã®è¨­å®š
+wd <- "C:/Users/*****/Desktop/Tile" # ãŠå¥½ããªãƒ‘ã‚¹ã‚’
 setwd(wd)
 
 #  ----------------
@@ -16,7 +16,7 @@ setwd(wd)
 #  |      y2      |
 #  ----------------
 #
-#“Ç‚Ýž‚Ý‚½‚¢”ÍˆÍ‚Æƒ^ƒCƒ‹URL‚Ì“ü—Í
+#èª­ã¿è¾¼ã¿ãŸã„ç¯„å›²ã¨ã‚¿ã‚¤ãƒ«URLã®å…¥åŠ›
 x1 <- -0.5
 x2 <- 0
 y1 <- 51
@@ -25,21 +25,21 @@ z1 <- 2
 z2 <- 14
 folder <- "os_test0209_curl2"
 tile.name <- "https://s3-eu-west-1.amazonaws.com/tiles.os.uk/data/vector/open-zoomstack" # Ordnance Survey
-ext <- ".pbf" #Šg’£Žq
+ext <- ".pbf" #æ‹¡å¼µå­
 # https://www.ordnancesurvey.co.uk/business-and-government/products/os-open-zoomstack.html
   # Contains OS data c Crown copyright and database right 2019
   # Where you use Code-Point Open data, you must also use the following attribution statements:
   # Contains Royal Mail data c Royal Mail copyright and Database right 2019
   # Contains National Statistics data c Crown copyright and database right 2019
-# “ü—ÍI‚í‚è
+# å…¥åŠ›çµ‚ã‚ã‚Š
 
-# ˆÈ‰º‰‰ŽZ
+# ä»¥ä¸‹æ¼”ç®—
 Z1 <- min(z1, z2)
 Z2 <- max(z1, z2)
 X1 <- min(x1, x2)
 X2 <- max(x1, x2)
-Y1 <- max(y1, y2) #x,z‚Æ‹t‚Å‚ ‚é‚Ì‚Å’ˆÓ
-Y2 <- min(y1, y2) #x,z‚Æ‹t‚Å‚ ‚é‚Ì‚Å’ˆÓ
+Y1 <- max(y1, y2) #x,zã¨é€†ã§ã‚ã‚‹ã®ã§æ³¨æ„
+Y2 <- min(y1, y2) #x,zã¨é€†ã§ã‚ã‚‹ã®ã§æ³¨æ„
 dir.create(folder) 
 
 k <- Z1
@@ -52,7 +52,7 @@ tile.Y1 <- floor(((log(tan(85.051129*(pi/180)/2+pi/4))-log(tan(Y1*(pi/180)/2+pi/
 tile.Y2 <- floor(((log(tan(85.051129*(pi/180)/2+pi/4))-log(tan(Y2*(pi/180)/2+pi/4)))/log(tan(85.051129*(pi/180)/2+pi/4)))*(2^(zl-1)))
 z.wd <- paste(wd, "/", folder, sep="")
 setwd(z.wd)
-dir.create(as.character(zl)) #Z‚ÌƒtƒHƒ‹ƒ_‚ðì¬
+dir.create(as.character(zl)) #Zã®ãƒ•ã‚©ãƒ«ãƒ€ã‚’ä½œæˆ
 tx <- tile.X1
 	while(tx <= tile.X2){
 	x.wd <- paste(z.wd, "/", zl, sep="")
@@ -71,26 +71,26 @@ tx <- tile.X1
 		}, error = function(e){}
 		)
 		ty <- ty+1
-		}#y‚Ìwhile‚ð•Â‚¶‚é
+		}#yã®whileã‚’é–‰ã˜ã‚‹
 	tx <- tx+1
-	}#x‚Ìwhile‚ð•Â‚¶‚é
+	}#xã®whileã‚’é–‰ã˜ã‚‹
 k <- k+1
-}#z‚Ìwhile‚ð•Â‚¶‚é
+}#zã®whileã‚’é–‰ã˜ã‚‹
 
 #########################################################################
-#–Ú•WƒfƒBƒŒƒNƒgƒŠ‚ÌÝ’è
+#ç›®æ¨™ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã®è¨­å®š
 setwd <- wd
 folder
 sch_wd <- paste(wd, folder, sep="/")
 
-#ƒtƒ@ƒCƒ‹î•ñ‚ÌŽæ“¾
-listf <- list.files(sch_wd, recursive = TRUE, full.names = TRUE) #ƒtƒ‹ƒpƒX
-listf <- listf[-length(listf)]#—]•ª‚Èƒtƒ@ƒCƒ‹‚ðœ‚­
+#ãƒ•ã‚¡ã‚¤ãƒ«æƒ…å ±ã®å–å¾—
+listf <- list.files(sch_wd, recursive = TRUE, full.names = TRUE) #ãƒ•ãƒ«ãƒ‘ã‚¹
+listf <- listf[-length(listf)]#ä½™åˆ†ãªãƒ•ã‚¡ã‚¤ãƒ«ã‚’é™¤ã
 infof <- file.info(listf); head(infof)
 
-#ƒ^ƒCƒ‹À•W‚ÌŽæ“¾
-listtile <- list.files(sch_wd, recursive = TRUE) #ƒ^ƒCƒ‹‚ÌƒpƒX‚Ì‚Ý
-listtile <- listtile[-length(listtile)]#—]•ª‚Èƒtƒ@ƒCƒ‹‚ðœ‚­
+#ã‚¿ã‚¤ãƒ«åº§æ¨™ã®å–å¾—
+listtile <- list.files(sch_wd, recursive = TRUE) #ã‚¿ã‚¤ãƒ«ã®ãƒ‘ã‚¹ã®ã¿
+listtile <- listtile[-length(listtile)]#ä½™åˆ†ãªãƒ•ã‚¡ã‚¤ãƒ«ã‚’é™¤ã
 zxy <- strsplit(listtile, "/")
 i <- 1
 D <- NULL
@@ -101,25 +101,25 @@ while(i <= length(listtile)){
 	i <- i + 1}
 colnames(D) <- c("z", "x", "y.ext")
 
-#‚·‚×‚Ä‚Ìî•ñ‚ð‡‚í‚¹‚é
+#ã™ã¹ã¦ã®æƒ…å ±ã‚’åˆã‚ã›ã‚‹
 info <- cbind(infof, D)
-info[,"size"] <- info[,"size"]/1000 #kb‚Ö•ÏŠ·
+info[,"size"] <- info[,"size"]/1000 #kbã¸å¤‰æ›
 ##############################################
 
-#‘S‘Ì‚ÌƒqƒXƒgƒOƒ‰ƒ€
+#å…¨ä½“ã®ãƒ’ã‚¹ãƒˆã‚°ãƒ©ãƒ 
 sizef <- info[,"size"]
 hist(sizef, breaks = 100, xlab="size (kb)")
 # hist <- hist(input[,"size"], breaks = seq(0, max, 1000), xlab="size (byte)", main="Histgram of Tile Size at each ZL")
 
-#ƒfƒBƒŒƒNƒgƒŠ‚²‚Æ‚ÌƒqƒXƒgƒOƒ‰ƒ€
+#ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã”ã¨ã®ãƒ’ã‚¹ãƒˆã‚°ãƒ©ãƒ 
 input <- info
 max <- (floor(max(input[,"size"])/100)+1)*100
 i <- 1
 col <- c("black", "black", "black", "black", "black", "blue", "pink", "orange", "red", "green", "yellow", "grey", "purple", "brown")
-dir <- "z" #’²‚×‚½‚¢ƒfƒBƒŒƒNƒgƒŠ‚Ì—ñ–¼
+dir <- "z" #èª¿ã¹ãŸã„ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã®åˆ—å
 unique <- c("2" , "3" , "4",  "5",  "6",  "7",  "8",  "9" , "10", "11", "12", "13" ,"14")
 # unique <- as.character(unique(input[,dir]))
-par(mfcol = c(3,5), oma = c(0, 0, 0, 0)) # mfcol ‚ÅŽw’è‚µ‚½ê‡‚Í—ñ‡‚ÉCmfrow ‚ÅŽw’è‚µ‚½ê‡‚Ís‡‚ÉƒOƒ‰ƒt‚ª•`‚©‚ê‚é
+par(mfcol = c(3,5), oma = c(0, 0, 0, 0)) # mfcol ã§æŒ‡å®šã—ãŸå ´åˆã¯åˆ—é †ã«ï¼Œmfrow ã§æŒ‡å®šã—ãŸå ´åˆã¯è¡Œé †ã«ã‚°ãƒ©ãƒ•ãŒæã‹ã‚Œã‚‹
 hist(sizef, breaks = seq(0, max, 50), xlab="size (kb)", main="Total", freq = FALSE)
 while(i <= length(unique)){
 	bool <- (input[,dir] == unique[i])
@@ -144,26 +144,26 @@ library(raster); library(rgdal); library(automap)
 zl <- "14"
 C <- subset(info, info[,"z"]==zl)
 vx <- as.numeric(as.character(C[,"x"])) 
-stry <- as.character(C[,"y.ext"]) #•¶Žš—ñ•ªŠ„
+stry <- as.character(C[,"y.ext"]) #æ–‡å­—åˆ—åˆ†å‰²
 vy <- as.numeric(unlist(strsplit(stry, ".pbf")))
 value <- C[, "size"]
 
 plot(vx, vy, pch=16, col = gray(value/max(value)))
 
-df <- cbind(vx, vy, value); colnames(df) <- c("x", "y", "value") # ã‚Ìƒf[ƒ^‚ð‚Ü‚Æ‚ß‚é
+df <- cbind(vx, vy, value); colnames(df) <- c("x", "y", "value") # ä¸Šã®ãƒ‡ãƒ¼ã‚¿ã‚’ã¾ã¨ã‚ã‚‹
 plot(df); head(df)
 length(unique(df[,"x"])); length(unique(df[,"y"]))
 
 ########################
 # Transform
-# Œ³ƒf[ƒ^‚ðsp‚É•ÏŠ·(‚±‚ÌƒeƒLƒXƒg‚Ìã‚Ì•ûŽQÆ)
-dat <- as.data.frame(df) # ƒTƒ“ƒvƒŠƒ“ƒO“_ƒf[ƒ^(x, y, value)
+# å…ƒãƒ‡ãƒ¼ã‚¿ã‚’spã«å¤‰æ›(ã“ã®ãƒ†ã‚­ã‚¹ãƒˆã®ä¸Šã®æ–¹å‚ç…§)
+dat <- as.data.frame(df) # ã‚µãƒ³ãƒ—ãƒªãƒ³ã‚°ç‚¹ãƒ‡ãƒ¼ã‚¿(x, y, value)
 coordinates(dat) = ~x+y
 spplot(dat)
 #dev.new()
 #writeOGR(dat, "dat.geojson", layer = "value", driver = "GeoJSON")
 
-# ‚Ü‚½‚ÍAGeoJSON‚ð“Ç‚Ýž‚Þ 
+# ã¾ãŸã¯ã€GeoJSONã‚’èª­ã¿è¾¼ã‚€ 
 # dat <- readOGR("dat.geojson")
 
 # Raster of Tiles 
@@ -171,7 +171,7 @@ datg <- dat
 gridded(datg) = TRUE
 tile.raster <- raster(datg)
 plot(tile.raster)
-# writeRaster(tile.raster, "Tile_Raster.tiff", overwrite=TRUE, format="GTiff") # GeoTiffiŠg’£Žq.tifj‚Åƒ^ƒCƒ‹‚ðƒ‰ƒXƒ^‚Æ‚µ‚Äo—ÍB
+# writeRaster(tile.raster, "Tile_Raster.tiff", overwrite=TRUE, format="GTiff") # GeoTiffï¼ˆæ‹¡å¼µå­.tifï¼‰ã§ã‚¿ã‚¤ãƒ«ã‚’ãƒ©ã‚¹ã‚¿ã¨ã—ã¦å‡ºåŠ›ã€‚
 
 ########################
 # Tile Grid Raster (use "zl", and "vx", "vy" and "value" used to create "df")
@@ -195,7 +195,7 @@ coordinates(datLL) = ~x+y
 datLL@proj4string <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
 # writeOGR(datLL, "datLL.geojson", layer = "value", driver = "GeoJSON")
 
-# “Š‰e–@‚Ì•ÏŠ·ito UTMj
+# æŠ•å½±æ³•ã®å¤‰æ›ï¼ˆto UTMï¼‰
 zone <- 30; new.crs <- CRS(paste("+proj=utm +zone=", zone, " +datum=WGS84 +units=m", sep=""))
 datLL <- spTransform(datLL, CRS=new.crs) 
 spplot(datLL)
@@ -203,7 +203,7 @@ spplot(datLL)
 gridded(datLL) = TRUE
 tile.raster <- raster(datLL)
 plot(tile.raster)
-writeRaster(tile.raster, "Tile_Raster.tiff", overwrite=TRUE, format="GTiff") # GeoTiffiŠg’£Žq.tifj‚Åƒ^ƒCƒ‹‚ðƒ‰ƒXƒ^‚Æ‚µ‚Äo—ÍB
+writeRaster(tile.raster, "Tile_Raster.tiff", overwrite=TRUE, format="GTiff") # GeoTiffï¼ˆæ‹¡å¼µå­.tifï¼‰ã§ã‚¿ã‚¤ãƒ«ã‚’ãƒ©ã‚¹ã‚¿ã¨ã—ã¦å‡ºåŠ›ã€‚
 
 datg # 
 
@@ -224,7 +224,7 @@ moran.test(df[,"value"], nb)
 # Kriging
 dat.k <- datLL
 
-# ƒOƒŠƒbƒh grid (newdata)
+# ã‚°ãƒªãƒƒãƒ‰ grid (newdata)
 coord <- coordinates(dat.k)
 x.grid <- seq(min(coord[,1]), max(coord[,1]), length=100)
 y.grid <- seq(min(coord[,2]), max(coord[,2]), length=100)
@@ -236,7 +236,7 @@ colnames(grid) <- c("x","y", colnames(grid)[-c(1:2)])
 gridded(grid) = ~x+y
 # grid@proj4string <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
 
-# •’ÊƒNƒŠƒMƒ“ƒO@Ordinary kriging
+# æ™®é€šã‚¯ãƒªã‚®ãƒ³ã‚°ã€€Ordinary kriging
 kriging_o <- autoKrige(value~1, dat.k, grid, model = c("Sph", "Exp", "Gau", "Lin")) # , model = c("Sph", "Exp", "Gau", "Lin")
 dev.new(); plot(kriging_o)
 parameters_o <- kriging_o$var_model
@@ -247,7 +247,7 @@ r_o_sd <- raster(krig_o["var1.stdev"])
 plot(r_o);contour(r_o, col="white", add=T)
 plot(r_o_sd);contour(r_o_sd, col="white", add=T)
 
-# ••ÕƒNƒŠƒMƒ“ƒO Universal kriging
+# æ™®éã‚¯ãƒªã‚®ãƒ³ã‚° Universal kriging
 kriging_u <- autoKrige(value~x+y, dat.k, grid, model = c("Sph", "Exp", "Gau", "Lin")) # , model = c("Sph", "Exp", "Gau", "Lin")
 dev.new(); plot(kriging_u)
 parameters_u <- kriging_u$var_model
@@ -259,15 +259,15 @@ plot(r_u);contour(r_u, col="white", add=T)
 plot(r_u_sd);contour(r_u_sd, col="white", add=T)
 
 
-# ƒNƒŠƒMƒ“ƒOŒ‹‰Ê‚Ìo—Í Output result
-# “Š‰e•ÏŠ·
+# ã‚¯ãƒªã‚®ãƒ³ã‚°çµæžœã®å‡ºåŠ› Output result
+# æŠ•å½±å¤‰æ›
 r_o_ll <- projectRaster(r_o, crs="+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
 plot(r_o_ll, main=strsplit(projection(r_o_ll)," ")[[1]][c(1:2)])
 r_u_ll <- projectRaster(r_u, crs="+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
 plot(r_u_ll, main=strsplit(projection(r_u_ll)," ")[[1]][c(1:2)])
-# o—Í
-writeRaster(r_o_ll, "krig_pred_190202_o_1.tiff", overwrite=TRUE, format="GTiff") # GeoTiffiŠg’£Žq.tifj‚Å—\‘ª’l‚ðo—ÍB
-writeRaster(r_u_ll, "krig_pred_190202_u_1.tiff", overwrite=TRUE, format="GTiff") # GeoTiffiŠg’£Žq.tifj‚Å—\‘ª’l‚ðo—ÍB
+# å‡ºåŠ›
+writeRaster(r_o_ll, "krig_pred_190202_o_1.tiff", overwrite=TRUE, format="GTiff") # GeoTiffï¼ˆæ‹¡å¼µå­.tifï¼‰ã§äºˆæ¸¬å€¤ã‚’å‡ºåŠ›ã€‚
+writeRaster(r_u_ll, "krig_pred_190202_u_1.tiff", overwrite=TRUE, format="GTiff") # GeoTiffï¼ˆæ‹¡å¼µå­.tifï¼‰ã§äºˆæ¸¬å€¤ã‚’å‡ºåŠ›ã€‚
 
 
 # On Leaflet
@@ -313,19 +313,19 @@ map_s
 ##################################################################################################################################
 #########################################################################
 #########################################################################
-#–Ú•WƒfƒBƒŒƒNƒgƒŠ‚ÌÝ’è2
+#ç›®æ¨™ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã®è¨­å®š2
 setwd <- wd
 folder <- c("os_test0209_curl2", "osm_test0209_curl2")
 sch_wd <- paste(wd, folder[2], 14, sep="/")
 
-#ƒtƒ@ƒCƒ‹î•ñ‚ÌŽæ“¾
-listf <- list.files(sch_wd, recursive = TRUE, full.names = TRUE) #ƒtƒ‹ƒpƒX
-listf <- listf[-length(listf)]#—]•ª‚Èƒtƒ@ƒCƒ‹‚ðœ‚­
+#ãƒ•ã‚¡ã‚¤ãƒ«æƒ…å ±ã®å–å¾—
+listf <- list.files(sch_wd, recursive = TRUE, full.names = TRUE) #ãƒ•ãƒ«ãƒ‘ã‚¹
+listf <- listf[-length(listf)]#ä½™åˆ†ãªãƒ•ã‚¡ã‚¤ãƒ«ã‚’é™¤ã
 infof <- file.info(listf); head(infof)
 
-#ƒ^ƒCƒ‹À•W‚ÌŽæ“¾
-listtile <- list.files(sch_wd, recursive = TRUE) #ƒ^ƒCƒ‹‚ÌƒpƒX‚Ì‚Ý
-listtile <- listtile[-length(listtile)]#—]•ª‚Èƒtƒ@ƒCƒ‹‚ðœ‚­
+#ã‚¿ã‚¤ãƒ«åº§æ¨™ã®å–å¾—
+listtile <- list.files(sch_wd, recursive = TRUE) #ã‚¿ã‚¤ãƒ«ã®ãƒ‘ã‚¹ã®ã¿
+listtile <- listtile[-length(listtile)]#ä½™åˆ†ãªãƒ•ã‚¡ã‚¤ãƒ«ã‚’é™¤ã
 zxy <- strsplit(listtile, "/")
 i <- 1
 D <- NULL
@@ -337,26 +337,26 @@ while(i <= length(listtile)){
 	i <- i + 1}
 colnames(D) <- c("x", "y.ext") # colnames(D) <- c("z", "x", "y.ext")
 
-#‚·‚×‚Ä‚Ìî•ñ‚ð‡‚í‚¹‚é
+#ã™ã¹ã¦ã®æƒ…å ±ã‚’åˆã‚ã›ã‚‹
 info <- cbind(infof, D)
-info[,"size"] <- info[,"size"]/1000 #kb‚Ö•ÏŠ·
+info[,"size"] <- info[,"size"]/1000 #kbã¸å¤‰æ›
 head(info)
 ##############################################
 
-#‘S‘Ì‚ÌƒqƒXƒgƒOƒ‰ƒ€
+#å…¨ä½“ã®ãƒ’ã‚¹ãƒˆã‚°ãƒ©ãƒ 
 sizef <- info[,"size"]
 hist(sizef, breaks = 100, xlab="size (kb)")
 # hist <- hist(input[,"size"], breaks = seq(0, max, 1000), xlab="size (byte)", main="Histgram of Tile Size at each ZL")
 
-#ƒfƒBƒŒƒNƒgƒŠ‚²‚Æ‚ÌƒqƒXƒgƒOƒ‰ƒ€
+#ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã”ã¨ã®ãƒ’ã‚¹ãƒˆã‚°ãƒ©ãƒ 
 input <- info
 max <- (floor(max(input[,"size"])/100)+1)*100
 i <- 1
 # col <- c("black", "black", "black", "black", "black", "blue", "pink", "orange", "red", "green", "yellow", "grey", "purple", "brown")
-dir <- "x" #’²‚×‚½‚¢ƒfƒBƒŒƒNƒgƒŠ‚Ì—ñ–¼
+dir <- "x" #èª¿ã¹ãŸã„ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã®åˆ—å
 # unique <- c("2" , "3" , "4",  "5",  "6",  "7",  "8",  "9" , "10", "11", "12", "13" ,"14")
 unique <- as.character(unique(input[,dir]));print(unique);length(unique)+1
-par(mfcol = c(5,5), oma = c(0, 0, 0, 0)) # mfcol ‚ÅŽw’è‚µ‚½ê‡‚Í—ñ‡‚ÉCmfrow ‚ÅŽw’è‚µ‚½ê‡‚Ís‡‚ÉƒOƒ‰ƒt‚ª•`‚©‚ê‚é
+par(mfcol = c(5,5), oma = c(0, 0, 0, 0)) # mfcol ã§æŒ‡å®šã—ãŸå ´åˆã¯åˆ—é †ã«ï¼Œmfrow ã§æŒ‡å®šã—ãŸå ´åˆã¯è¡Œé †ã«ã‚°ãƒ©ãƒ•ãŒæã‹ã‚Œã‚‹
 hist(sizef, breaks = seq(0, max, 5), xlab="size (kb)", main="Total", freq = FALSE)
 lines(density(C), col = "red", lwd = 2)
 while(i <= length(unique)){
