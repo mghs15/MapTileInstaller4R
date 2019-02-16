@@ -124,7 +124,9 @@ hist(sizef, breaks = seq(0, max, 50), xlab="size (kb)", main="Total", freq = FAL
 while(i <= length(unique)){
 	bool <- (input[,dir] == unique[i])
 	C <- subset(input, bool)[,"size"]
-	hist(C, breaks = seq(0, max, 50), col=col[i], main=unique[i], xlab="size [byte]", freq = FALSE) # add=T
+	C <- log2(C + 1) # idea from "https://github.com/hfu/advent-vt/wiki/%E9%87%8F%E3%83%AC%E3%83%99%E3%83%AB-q-%E3%81%A8%E3%81%84%E3%81%86%E8%80%83%E3%81%88%E6%96%B9"
+	max <- max(C)+1
+	hist(C, breaks = 20, col=col[i], main=unique[i], xlab="log2(size[byte])", freq = FALSE) # add=T
 	lines(density(C), col = "orange", lwd = 2)
 	print(paste("ZL=", unique[i], ", mean=", mean(C), ", sd=", sd(C), ", n=", length(C), sep=""))
 	input <- subset(input, !bool)
@@ -184,25 +186,28 @@ lat_2 <- atan(sinh(pi - (vy+1)*2*pi/(2^vz)))*180/pi
 lon <- (lon_1 + lon_2)/2; lat <- (lat_1 + lat_2)/2
 plot(lon, lat, pch=16, col = gray(value/max(value)))
 
-dfg <- cbind(lon, lat, value) 
-colnames(dfg) <- c("x", "y", "value")
-plot(dfg); head(dfg)
-length(unique(dfg[,"x"])); length(unique(dfg[,"y"]))
+df_LL <- cbind(lon, lat, value) 
+colnames(df_LL) <- c("x", "y", "value")
+plot(df_LL); head(df_LL)
+length(unique(df_LL[,"x"])); length(unique(df_LL[,"y"]))
 
 ####
 # to Spatial Data
-datLL <- as.data.frame(dfg) 
+datLL <- as.data.frame(df_LL) 
 coordinates(datLL) = ~x+y
 datLL@proj4string <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
 # writeOGR(datLL, "datLL.geojson", layer = "value", driver = "GeoJSON")
 
 # 投影法の変換（to UTM）
 zone <- 30; new.crs <- CRS(paste("+proj=utm +zone=", zone, " +datum=WGS84 +units=m", sep=""))
-datLL <- spTransform(datLL, CRS=new.crs) 
-spplot(datLL)
+datLL_utm <- spTransform(datLL, CRS=new.crs) 
+spplot(datLL_utm)
 
-gridded(datLL) = TRUE
-tile.raster <- raster(datLL)
+########################
+# not used
+
+gridded(datLL_utm) = TRUE
+tile.raster <- raster(datLL_utm)
 plot(tile.raster)
 writeRaster(tile.raster, "Tile_Raster.tiff", overwrite=TRUE, format="GTiff") # GeoTiff（拡張子.tif）でタイルをラスタとして出力。
 
@@ -223,9 +228,10 @@ moran.test(df[,"value"], nb)
 
 ########################
 # Kriging
-datLL_noref <- as.data.frame(dfg) # use parameters of datLL
+datLL_noref <- as.data.frame(df_LL) # use parameters of datLL
 coordinates(datLL_noref) = ~x+y
 dat.k <- datLL_noref # no CRS ref
+# When you use dat_LL, use the lat lon for kriging
 # dat.k <- datLL
 
 # グリッド grid (newdata)
@@ -238,7 +244,6 @@ vyg <- seq(min(coord[,2]), max(coord[,2]), length=nrow(xy.grid))
 grid <- as.data.frame(cbind(xy.grid, vxg, vyg))
 colnames(grid) <- c("x","y", colnames(grid)[-c(1:2)])
 gridded(grid) = ~x+y
-# grid@proj4string <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
 
 # 普通クリギング　Ordinary kriging
 kriging_o <- autoKrige(value~1, dat.k, grid, model = c("Sph", "Exp", "Gau", "Lin")) # , model = c("Sph", "Exp", "Gau", "Lin")
@@ -249,8 +254,8 @@ krig_o@proj4string <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs") # 
 r_o <- raster(krig_o["var1.pred"])
 r_o_sd <- raster(krig_o["var1.stdev"])
 
-plot(r_o);contour(r_o, col="white", add=T)
-plot(r_o_sd);contour(r_o_sd, col="white", add=T)
+dev.new(); plot(r_o);contour(r_o, col="white", add=T)
+# plot(r_o_sd);contour(r_o_sd, col="white", add=T)
 
 # 普遍クリギング Universal kriging
 kriging_u <- autoKrige(value~x+y, dat.k, grid, model = c("Sph", "Exp", "Gau", "Lin")) # , model = c("Sph", "Exp", "Gau", "Lin")
@@ -261,8 +266,8 @@ krig_u@proj4string <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs") # 
 r_u <- raster(krig_u["var1.pred"])
 r_u_sd <- raster(krig_u["var1.stdev"])
 
-plot(r_u);contour(r_u, col="white", add=T)
-plot(r_u_sd);contour(r_u_sd, col="white", add=T)
+dev.new(); plot(r_u);contour(r_u, col="white", add=T)
+# plot(r_u_sd);contour(r_u_sd, col="white", add=T)
 
 #########################################################################
 # クリギング結果の出力 Output result
@@ -272,8 +277,8 @@ plot(r_o_ll, main=strsplit(projection(r_o_ll)," ")[[1]][c(1:2)])
 r_u_ll <- projectRaster(r_u, crs="+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
 plot(r_u_ll, main=strsplit(projection(r_u_ll)," ")[[1]][c(1:2)])
 # 出力
-writeRaster(r_o_ll, "krig_pred_190202_o_1.tiff", overwrite=TRUE, format="GTiff") # GeoTiff（拡張子.tif）で予測値を出力。
-writeRaster(r_u_ll, "krig_pred_190202_u_1.tiff", overwrite=TRUE, format="GTiff") # GeoTiff（拡張子.tif）で予測値を出力。
+# writeRaster(r_o_ll, "krig_pred_190202_o_1.tiff", overwrite=TRUE, format="GTiff") # GeoTiff（拡張子.tif）で予測値を出力。
+# writeRaster(r_u_ll, "krig_pred_190202_u_1.tiff", overwrite=TRUE, format="GTiff") # GeoTiff（拡張子.tif）で予測値を出力。
 
 # On Leaflet
 dat.k.out <- dat.k
