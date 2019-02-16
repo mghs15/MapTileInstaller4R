@@ -135,7 +135,13 @@ while(i <= length(unique)){
 par(mfcol = c(1,1), oma = c(0, 0, 0, 0))
 
 ############################################################################################
-### Spatial Analysis ####                   
+### Spatial Analysis #### 
+#
+# info (Tile Grid) -> df    (Tile Grid) -> dat (Tile Grid, no CRS Ref)
+#                  -> df_LL (Lon Lat)   -> datLL_noref (Lon Lat, no CRS Ref)
+#                                       -> datLL (Lon Lat, EPSG=3857)
+#                  
+#
 ############################################################################################
 library(spdep); library(maptools); library(gstat); library(sp)
 library(raster); library(rgdal); library(automap)
@@ -150,7 +156,6 @@ stry <- as.character(C[,"y.ext"]) #文字列分割
 vy <- as.numeric(unlist(strsplit(stry, ".pbf")))
 value <- log(C[, "size"]+1) # idea from "https://github.com/hfu/advent-vt/wiki/%E9%87%8F%E3%83%AC%E3%83%99%E3%83%AB-q-%E3%81%A8%E3%81%84%E3%81%86%E8%80%83%E3%81%88%E6%96%B9"
 
-
 plot(vx, vy, pch=16, col = gray(value/max(value)))
 
 df <- cbind(vx, vy, value); colnames(df) <- c("x", "y", "value") # 上のデータをまとめる
@@ -158,7 +163,7 @@ plot(df); head(df)
 length(unique(df[,"x"])); length(unique(df[,"y"]))
 
 ########################
-# Transform
+# Transform to Spatial Data
 # 元データをspに変換(このテキストの上の方参照)
 dat <- as.data.frame(df) # サンプリング点データ(x, y, value)
 coordinates(dat) = ~x+y
@@ -169,14 +174,55 @@ spplot(dat)
 # または、GeoJSONを読み込む 
 # dat <- readOGR("dat.geojson")
 
+########################
 # Raster of Tiles 
-datg <- dat
+datg <- as.data.frame(df)
+
+datg["x"] <- datg["x"] + 0.5
+datg["y"] <- datg["y"] + 0.5
+
+coordinates(datg) = ~x+y
 gridded(datg) = TRUE
 tile.raster <- raster(datg)
 plot(tile.raster)
+str(tile.raster)
+
+# convert Raster's Tile Grid to Lon Lat
+vz
+tile.raster@extent[1] <- tile.raster@extent[1]*360/(2^vz) - 180
+tile.raster@extent[2] <- tile.raster@extent[2]*360/(2^vz) - 180
+ymin <- tile.raster@extent[3]
+ymax <- tile.raster@extent[4]
+tile.raster@extent[3] <- atan(sinh(pi - ymax*2*pi/(2^vz)))*180/pi
+tile.raster@extent[4] <- atan(sinh(pi - ymin*2*pi/(2^vz)))*180/pi
+
+r.value <- tile.raster@data@values 
+D <- NULL; range <- 1; 
+i <- 1; ncol <- tile.raster@ncols; nrow <- tile.raster@nrows; 
+while(i <- length(ncol*nrow)){
+range_nrow <- range + nrow
+sub <- rev(tile.raster@data@values[range:range_nrow])
+D <- c(D, sub)
+range <- range_nrow
+i <- i + 1
+}
+tile.raster@data@values <- D
+
+tile.raster@crs  <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+plot(tile.raster)
+
 # writeRaster(tile.raster, "Tile_Raster.tiff", overwrite=TRUE, format="GTiff") # GeoTiff（拡張子.tif）でタイルをラスタとして出力。
+# Simple
+library("leaflet"); library("tidyr")
+pal.t <- colorNumeric(c("blue","skyblue", "white", "yellow", "orange"), values(tile.raster),  na.color = "transparent")
+map_t <- leaflet() %>% addTiles() %>% setView(lng=0,lat=51,zoom=7) %>%
+	addScaleBar(position="bottomleft", options=scaleBarOptions(imperial = FALSE)) %>%
+	addRasterImage(tile.raster, colors = pal.t, opacity = 0.8) %>% 
+	addLegend(pal = pal.t, values = values(tile.raster), title = "value <br> [kb]")
+map_t
 
 ########################
+# タイル座標から経緯度へ
 # Tile Grid Raster (use "zl", and "vx", "vy" and "value" used to create "df")
 # Convert Tile x y to lon lat
 vz <- as.numeric(zl)  #zoom level
@@ -192,31 +238,10 @@ colnames(df_LL) <- c("x", "y", "value")
 plot(df_LL); head(df_LL)
 length(unique(df_LL[,"x"])); length(unique(df_LL[,"y"]))
 
-####
-# to Spatial Data
-datLL <- as.data.frame(df_LL) 
-coordinates(datLL) = ~x+y
-datLL@proj4string <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
-# writeOGR(datLL, "datLL.geojson", layer = "value", driver = "GeoJSON")
-
-# 投影法の変換（to UTM）
-zone <- 30; new.crs <- CRS(paste("+proj=utm +zone=", zone, " +datum=WGS84 +units=m", sep=""))
-datLL_utm <- spTransform(datLL, CRS=new.crs) 
-spplot(datLL_utm)
-
-########################
-# not used
-
-gridded(datLL_utm) = TRUE
-tile.raster <- raster(datLL_utm)
-plot(tile.raster)
-writeRaster(tile.raster, "Tile_Raster.tiff", overwrite=TRUE, format="GTiff") # GeoTiff（拡張子.tif）でタイルをラスタとして出力。
-
-datg # 
-
 ########################
 # Moran
 
+# Tile Grid -- Use "df"
 coords.df <- cbind(df[,"x"], df[,"y"])
 nb <- nb2listw(knn2nb(knearneigh(coords.df, k=2)))
 plot(nb, coords.df)
@@ -227,12 +252,14 @@ nb <- nb2listw(dnearneigh(coords.df, 0, 1))
 plot(nb, coords.df)
 moran.test(df[,"value"], nb)
 
+# Lon Lat -- Use "df_LL" but use good distance
+
 ########################
 # Kriging
 datLL_noref <- as.data.frame(df_LL) # use parameters of datLL
 coordinates(datLL_noref) = ~x+y
 dat.k <- datLL_noref # no CRS ref
-# When you use dat_LL, use the lat lon for kriging
+# When you use dat_LL, use lat lon for kriging (if CRS is set, errors will appered)
 # dat.k <- datLL
 
 # グリッド grid (newdata)
@@ -289,6 +316,7 @@ tile_zoomlevel <- 1 + 10/vz
 
 pal.o <- colorNumeric(c("blue","skyblue", "white", "yellow", "orange"), values(r_o_ll),  na.color = "transparent")
 pal.u <- colorNumeric(c("violet", "white",  "green"), values(r_u_ll),  na.color = "transparent")
+pal.t <- colorNumeric(c("blue","skyblue", "white", "yellow", "orange"), values(tile.raster),  na.color = "transparent")
 atr_gsi <- "<a href='http://maps.gsi.go.jp/development/ichiran.html' target='_blank'>GSI-Tiles</a>"
 map <- leaflet(options = leafletOptions(zoomControl = FALSE)) %>% setView(lng=0,lat=51,zoom=7) %>%
 	# add tiles
@@ -301,10 +329,12 @@ map <- leaflet(options = leafletOptions(zoomControl = FALSE)) %>% setView(lng=0,
 	addLegend(pal = pal.o, values = values(r_o_ll), title = "size <br> [kb] <br> Ord", group = "OrdKri", position="topleft") %>%
 	addRasterImage(r_u_ll, colors = pal.u, opacity = 0.8, group = "UniKri") %>% 
 	addLegend(pal = pal.u, values = values(r_u_ll), title = "size <br> [kb] <br> Uni", group = "UniKri", position="topleft") %>%
+	addRasterImage(tile.raster, colors = pal.u, opacity = 0.8, group = "TileGrid") %>% 
+	addLegend(pal = pal.t, values = values(tile.raster), title = "size <br> [kb] <br> TileGrid", group = "UniKri", position="topleft") %>%
 	# set tiles and raster on maps
 	addLayersControl(
 	  baseGroups = c("OpenStreetMap", "GSI Tiles"),
-	  overlayGroups = c("TilePos", "OrdKri", "UniKri"),
+	  overlayGroups = c("TilePos", "TileGrid", "OrdKri", "UniKri"),
 	  position="topright",
 	  options=layersControlOptions(collapsed = TRUE)
 	) %>%
@@ -315,7 +345,7 @@ map
 
 # Simple
 library("leaflet"); library("tidyr")
-pal.k <- colorNumeric(c("white",  "orange"), values(r_u_ll),  na.color = "transparent")
+pal.k <- colorNumeric(c("blue","skyblue", "white", "yellow", "orange"), values(r_u_ll),  na.color = "transparent")
 map_s <- leaflet(dat.k) %>% addTiles() %>% setView(lng=0,lat=51,zoom=7) %>%
 	addScaleBar(position="bottomleft", options=scaleBarOptions(imperial = FALSE)) %>%
 	addRasterImage(r_u_ll, colors = pal.k, opacity = 0.8) %>% 
