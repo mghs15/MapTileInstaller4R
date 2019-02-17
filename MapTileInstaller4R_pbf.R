@@ -5,7 +5,7 @@ original.wd <- getwd()
 setwd(original.wd)
 
 # 作業ディレクトリの設定
-wd <- "C:/Users/*****/Desktop/Tile" # お好きなパスを
+wd <- "C:/Users/********/Documents/tiles" # お好きなパスを
 setwd(wd)
 
 #  ----------------
@@ -17,15 +17,15 @@ setwd(wd)
 #  ----------------
 #
 #読み込みたい範囲とタイルURLの入力
-x1 <- -0.5
-x2 <- 0
-y1 <- 51
-y2 <- 51.5
-z1 <- 2
-z2 <- 14
-folder <- "os_test0209_curl2"
-tile.name <- "https://s3-eu-west-1.amazonaws.com/tiles.os.uk/data/vector/open-zoomstack" # Ordnance Survey
-ext <- ".pbf" #拡張子
+x1 <- 141.306410
+x2 <- 141.349669
+y1 <- 43.036964
+y2 <- 43.100795
+z1 <- 18
+z2 <- 18
+folder <- "gsi_fgd_0217"
+tile.name <- "https://cyberjapandata.gsi.go.jp/xyz/experimental_fgd" # Ordnance Survey
+ext <- ".geojson" #拡張子
 # https://www.ordnancesurvey.co.uk/business-and-government/products/os-open-zoomstack.html
   # Contains OS data c Crown copyright and database right 2019
   # Where you use Code-Point Open data, you must also use the following attribution statements:
@@ -87,6 +87,7 @@ sch_wd <- paste(wd, folder, sep="/")
 listf <- list.files(sch_wd, recursive = TRUE, full.names = TRUE) #フルパス
 listf <- listf[-length(listf)]#余分なファイルを除く
 infof <- file.info(listf); head(infof)
+summary(infof)
 
 #タイル座標の取得
 listtile <- list.files(sch_wd, recursive = TRUE) #タイルのパスのみ
@@ -99,11 +100,17 @@ while(i <= length(listtile)){
 	C <- c(str[1], str[2], str[3])
 	D <- rbind(D, C)
 	i <- i + 1}
-colnames(D) <- c("z", "x", "y.ext")
+colnames(D) <- c("z", "x", "y")
+
+#yを拡張子から分離
+stry <- as.character(D[,"y"]) #文字列分割
+D[,"y"] <- as.numeric(unlist(strsplit(stry, ext)))
 
 #すべての情報を合わせる
 info <- cbind(infof, D)
+rownames(info) <- paste(info[,"z"], "/", info[,"x"], "/", info[,"y"],ext, sep="")
 info[,"size"] <- info[,"size"]/1000 #kbへ変換
+summary(info)
 ##############################################
 
 #全体のヒストグラム
@@ -149,11 +156,12 @@ library(raster); library(rgdal); library(automap)
 # Use dataset named as "info", including tile xyz ("x", "y", "z") and "size".
 # info <- info[-c(length(info[,1])-1, length(info[,1])),]
 
-zl <- "14"
+zl <- "18"
 C <- subset(info, info[,"z"]==zl)
 vx <- as.numeric(as.character(C[,"x"])) 
-stry <- as.character(C[,"y.ext"]) #文字列分割
-vy <- as.numeric(unlist(strsplit(stry, ".pbf")))
+vy <- as.numeric(as.character(C[,"y"])) 
+value <- C[, "size"]
+
 value <- log(C[, "size"]+1) # idea from "https://github.com/hfu/advent-vt/wiki/%E9%87%8F%E3%83%AC%E3%83%99%E3%83%AB-q-%E3%81%A8%E3%81%84%E3%81%86%E8%80%83%E3%81%88%E6%96%B9"
 
 plot(vx, vy, pch=16, col = gray(value/max(value)))
@@ -178,8 +186,8 @@ spplot(dat)
 # Raster of Tiles 
 datg <- as.data.frame(df)
 
-datg["x"] <- datg["x"] + 0.5
-datg["y"] <- datg["y"] + 0.5
+datg["x"] <- datg["x"] + 0.5 #位置をタイルの中央へ
+datg["y"] <- datg["y"] + 0.5 #位置をタイルの中央へ
 
 coordinates(datg) = ~x+y
 gridded(datg) = TRUE
@@ -188,7 +196,7 @@ plot(tile.raster)
 str(tile.raster)
 
 # convert Raster's Tile Grid to Lon Lat
-vz
+vz <- 18
 tile.raster@extent[1] <- tile.raster@extent[1]*360/(2^vz) - 180
 tile.raster@extent[2] <- tile.raster@extent[2]*360/(2^vz) - 180
 ymin <- tile.raster@extent[3]
@@ -196,17 +204,7 @@ ymax <- tile.raster@extent[4]
 tile.raster@extent[3] <- atan(sinh(pi - ymax*2*pi/(2^vz)))*180/pi
 tile.raster@extent[4] <- atan(sinh(pi - ymin*2*pi/(2^vz)))*180/pi
 
-r.value <- tile.raster@data@values 
-D <- NULL; range <- 1; 
-i <- 1; ncol <- tile.raster@ncols; nrow <- tile.raster@nrows; 
-while(i <- length(ncol*nrow)){
-range_nrow <- range + nrow
-sub <- rev(tile.raster@data@values[range:range_nrow])
-D <- c(D, sub)
-range <- range_nrow
-i <- i + 1
-}
-tile.raster@data@values <- D
+tile.raster <- flip(tile.raster, direction = "y")
 
 tile.raster@crs  <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
 plot(tile.raster)
@@ -215,11 +213,27 @@ plot(tile.raster)
 # Simple
 library("leaflet"); library("tidyr")
 pal.t <- colorNumeric(c("blue","skyblue", "white", "yellow", "orange"), values(tile.raster),  na.color = "transparent")
-map_t <- leaflet() %>% addTiles() %>% setView(lng=0,lat=51,zoom=7) %>%
+map_t <- leaflet() %>% addTiles() %>% setView(lng=141.328082,lat=43.068825,zoom=13) %>%
 	addScaleBar(position="bottomleft", options=scaleBarOptions(imperial = FALSE)) %>%
-	addRasterImage(tile.raster, colors = pal.t, opacity = 0.8) %>% 
+	addRasterImage(tile.raster, colors = pal.t, opacity = 0.5) %>% 
 	addLegend(pal = pal.t, values = values(tile.raster), title = "value <br> [kb]")
 map_t
+
+#######################
+
+# # not used from here
+r.value <- rev(tile.raster@data@values) 
+D <- NULL; range <- 1; 
+i <- 1; ncol <- tile.raster@ncols; nrow <- tile.raster@nrows; 
+while(i <= length(ncol*nrow)){
+range_nrow <- range + nrow - 1
+sub <- rev(r.value[c(range:range_nrow)])
+D <- c(D, sub)
+range <- range_nrow + 1
+i <- i + 1
+}
+tile.raster@data@values <- D
+# # not used until here
 
 ########################
 # タイル座標から経緯度へ
@@ -314,23 +328,23 @@ dat.k.out@proj4string <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
 TilePos <- coordinates(dat.k.out)
 tile_zoomlevel <- 1 + 10/vz
 
-pal.o <- colorNumeric(c("blue","skyblue", "white", "yellow", "orange"), values(r_o_ll),  na.color = "transparent")
+pal.o <- colorNumeric(c("skyblue", "white",  "brown"), values(r_o_ll),  na.color = "transparent")
 pal.u <- colorNumeric(c("violet", "white",  "green"), values(r_u_ll),  na.color = "transparent")
-pal.t <- colorNumeric(c("blue","skyblue", "white", "yellow", "orange"), values(tile.raster),  na.color = "transparent")
+pal.t <- colorNumeric(c("blue","skyblue", "white", "yellow", "red"), values(tile.raster),  na.color = "transparent")
 atr_gsi <- "<a href='http://maps.gsi.go.jp/development/ichiran.html' target='_blank'>GSI-Tiles</a>"
-map <- leaflet(options = leafletOptions(zoomControl = FALSE)) %>% setView(lng=0,lat=51,zoom=7) %>%
+map <- leaflet(options = leafletOptions(zoomControl = FALSE)) %>% setView(lng=141.328082,lat=43.068825,zoom=13) %>%
 	# add tiles
 	addTiles("http://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", attribution = atr_gsi, group = "GSI Tiles") %>%
 	addTiles(group = "OpenStreetMap") %>%
 	# add original data
 	addCircleMarkers(TilePos[,"x"], TilePos[,"y"], group = "TilePos", color= "blue", stroke=FALSE, radius = tile_zoomlevel) %>% 
 	# add kriging results (raster)
-	addRasterImage(r_o_ll, colors = pal.o, opacity = 0.8, group = "OrdKri") %>% 
+	addRasterImage(r_o_ll, colors = pal.o, opacity = 0.5, group = "OrdKri") %>% 
 	addLegend(pal = pal.o, values = values(r_o_ll), title = "size <br> [kb] <br> Ord", group = "OrdKri", position="topleft") %>%
-	addRasterImage(r_u_ll, colors = pal.u, opacity = 0.8, group = "UniKri") %>% 
+	addRasterImage(r_u_ll, colors = pal.u, opacity = 0.5, group = "UniKri") %>% 
 	addLegend(pal = pal.u, values = values(r_u_ll), title = "size <br> [kb] <br> Uni", group = "UniKri", position="topleft") %>%
-	addRasterImage(tile.raster, colors = pal.u, opacity = 0.8, group = "TileGrid") %>% 
-	addLegend(pal = pal.t, values = values(tile.raster), title = "size <br> [kb] <br> TileGrid", group = "UniKri", position="topleft") %>%
+	addRasterImage(tile.raster, colors = pal.t, opacity = 0.5, group = "TileGrid") %>% 
+	addLegend(pal = pal.t, values = values(tile.raster), title = "size <br> [kb] <br> TileGrid", group = "TileGrid", position="topleft") %>%
 	# set tiles and raster on maps
 	addLayersControl(
 	  baseGroups = c("OpenStreetMap", "GSI Tiles"),
